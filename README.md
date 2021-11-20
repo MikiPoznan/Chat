@@ -1,3 +1,3 @@
 # ✨Chat app ✨
 
-#### Osobisty projekt zrobienia aplikacji do komunikacji
+#### Osobisty projekt aplikacji do komunikacji przez internet
