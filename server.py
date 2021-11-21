@@ -2,6 +2,7 @@ from math import exp
 import socket
 import threading
 from random import randint
+import sys
 import string
 import random
 
@@ -30,7 +31,7 @@ def handle_command(msg, conn, addr):
     else:
         txt = bytes(f"Couldn't find command: {command_list[0].rsplit()} \n",encoding='utf8')
         conn.sendall(txt)
-
+    sys.exit()
 #admin_pass = id_generator(6)
 
 def sendtoall(msg):
@@ -63,7 +64,7 @@ def handle_client(conn, addr):
                 break
             msg_decoded = data.decode("utf-8")
             if msg_decoded.startswith("!"):
-                thread = threading.Thread(target=handle_command, args=(msg_decoded,conn, addr))
+                thread = threading.Thread(target=handle_command, args=(msg_decoded, conn, addr))
                 thread.start()
             else:
                 msg = f"{users[addr]} : {msg_decoded}"
