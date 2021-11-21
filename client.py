@@ -11,7 +11,9 @@ connected = False
     
 def print_messages(e):
     if connected:
-        sock.sendall(bytes(textbox.get(1.0, tk.END+"-1c"), 'utf-8'))
+        txt = textbox.get(1.0, tk.END+"-1c")
+        if not txt.isspace(): 
+            sock.sendall(bytes(txt, 'utf-8'))
         textbox.delete('1.0', tk.END)
     else:
         txt =f"[ERROR] Can't send message to server. You're disconnected \n"
