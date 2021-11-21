@@ -47,6 +47,10 @@ def handle_command(msg, conn, addr):
         if addr in admins:
             if not len(command_list) > 1: return
             if command_list[1].strip() in users_con:
+                if command_list[1].strip() == users[addr]: 
+                    txt = bytes(f"[ERROR] You can't kick yourself dummy! \n",encoding='utf8')
+                    conn.sendall(txt) 
+                    return
                 users_con[command_list[1].strip()].close()
                 txt = bytes(f"[Console] Kicked user {command_list[1].strip()} from the server \n",encoding='utf8')
                 sendtoall(txt)
