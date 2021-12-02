@@ -3,10 +3,60 @@ import threading
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 
-HOST = '127.0.0.1' 
+#HOST = '10.98.0.95' 
+HOST = '127.0.0.1'
 PORT = 2137      
 
 connected = False
+
+def create_room():
+    password = " "
+    id = roomid.get("1.0", "end").strip()
+    password = passwordbox.get()
+    command = f"!create {id} {password}"
+    sock.sendall(bytes(command, 'utf-8'))
+    new_window1.destroy()
+
+def join_room():
+    password = " "
+    id = roomid.get("1.0", "end").strip()
+    password = passwordbox.get()
+    command = f"!join {id} {password}"
+    sock.sendall(bytes(command, 'utf-8'))
+    new_window.destroy()
+
+
+def drawjoingui():
+    global roomid
+    global passwordbox
+    global new_window
+    new_window = tk.Tk()
+    new_window.title("Change room")   
+    new_window.geometry("225x75")
+    new_window.resizable(False,False)
+    tk.Label(new_window,text="Room ID: ").grid(row=5,column=4)
+    tk.Label(new_window,text="Password: ").grid(row=10,column=4)
+    roomid = tk.Text(new_window,width=20,height=1)
+    roomid.grid(row=5, column=5)
+    passwordbox = tk.Entry(new_window,show="\u2022",width=25)
+    passwordbox.grid(row=10, column=5)
+    button1 = tk.Button(new_window, height=1,width=5, text="Join", command=join_room).grid(row=20,column=4)
+
+def drawcreatgui():
+    global roomid
+    global passwordbox
+    global new_window1
+    new_window1 = tk.Tk()
+    new_window1.title("Create room")   
+    new_window1.geometry("225x75")
+    new_window1.resizable(False,False)
+    tk.Label(new_window1,text="Room ID: ").grid(row=5,column=4)
+    tk.Label(new_window1,text="Password: ").grid(row=10,column=4)
+    roomid = tk.Text(new_window1,width=20,height=1)
+    roomid.grid(row=5, column=5)
+    passwordbox = tk.Entry(new_window1,show="\u2022",width=25)
+    passwordbox.grid(row=10, column=5)
+    button1 = tk.Button(new_window1, height=1,width=5, text="Create", command=create_room).grid(row=20,column=4)
 
     
 def print_messages(e):
@@ -43,6 +93,12 @@ def gui():
     textw.bind('<<Modified>>',showEnd)
     textw.config(state=tk.DISABLED)
     textbox=tk.Text(root, height=2)
+    menu = tk.Menu(root) 
+    cascade = tk.Menu(menu) 
+    menu.add_cascade(label="Rooms", menu = cascade)      
+    cascade.add_command(label = "Join", command=drawjoingui)  
+    cascade.add_command(label = "Create",command=drawcreatgui) 
+    root.config( menu = menu)
     textbox.pack(fill=tk.X,side=tk.BOTTOM,ipadx=5, ipady=5)  
     root.mainloop()
 
@@ -78,7 +134,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         thread = threading.Thread(target=get_messages)
         thread.start()
         while True:
-            msg = input()
+           pass
 
     except Exception as e:
        txt=f"[ERROR] Couldn't join server. ERROR: {e} \n"
