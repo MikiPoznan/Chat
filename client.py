@@ -3,7 +3,7 @@ import threading
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 
-#HOST = '10.98.0.95' 
+
 HOST = '127.0.0.1'
 PORT = 2137      
 
