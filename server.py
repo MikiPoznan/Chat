@@ -5,6 +5,8 @@ from random import randint
 import sys
 import string
 import random
+import datetime 
+from cProfile import run
 
 HOST = '127.0.0.1'
 PORT = 2137
@@ -20,10 +22,19 @@ room_passwords = {}
 user_room= {}
 user_room["default"] = []
 
+
+
 def id_generator(size, chars=string.ascii_lowercase + string.digits):
    return ''.join(random.choice(chars) for _ in range(size))
 
 admin_pass = id_generator(6)
+
+def editlogfile(text,today):
+    teraz = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    f = open(f"logs/{today}.txt", "a")
+    f.write(f"\n{teraz} {text.strip()}")
+    f.close()
+
 
 def sendtoall(msg, conn):
     try:
@@ -31,7 +42,8 @@ def sendtoall(msg, conn):
         for i in rooms:
             if conn in user_room[i]:
                 for x in user_room[i]:
-                    x.sendall(msg)
+                    if x in socks:
+                        x.sendall(msg)
     except Exception as e:
         print(e)
 
@@ -41,7 +53,8 @@ def handle_room_changing(id,conn,addr):
             user_room[i].remove(conn)
     user_room[id].append(conn)
     for i in user_room[id]:
-        i.sendall(bytes(f"[Room {id}] Hi {users[addr]}! \n", 'utf-8'))
+        if i in socks:
+            i.sendall(bytes(f"[Room {id}] Hi {users[addr]}! \n", 'utf-8'))
     sys.exit()
 
 def handle_command(msg, conn, addr):
@@ -60,7 +73,7 @@ def handle_command(msg, conn, addr):
                 txt = bytes(f"[ERROR] Password {command_list[1].strip()} isn't valid \n",encoding='utf8')
                 conn.sendall(txt)
     elif command_list[0].strip() == "!create":
-        if len(command_list) == 2:
+        if len(command_list) > 2:
             id = command_list[1].strip()
             if not id in rooms:
                 rooms.append(id.strip())
@@ -68,6 +81,8 @@ def handle_command(msg, conn, addr):
                 user_room[id] = []
                 thread = threading.Thread(target=handle_room_changing, args=(id, conn,addr))
                 thread.start()
+            else:
+                conn.sendall(bytes(f"There is a room named: {id} \n",'utf-8'))
         elif len(command_list) == 3:
             id = command_list[1].strip()
             if not id in rooms:
@@ -83,12 +98,13 @@ def handle_command(msg, conn, addr):
             id = command_list[1].strip()
             if id in rooms:
                 if id in room_passwords:
-                    print("ak")
                     if len(command_list) > 2:
                         password = command_list[2].strip()
                         if room_passwords[id] == password:
                             thread = threading.Thread(target=handle_room_changing, args=(id, conn,addr))
                             thread.start()
+                        else:
+                            conn.sendall(bytes(f"You need to enter correct password to join room named: {id} \n",'utf-8'))
                 else:
                     thread = threading.Thread(target=handle_room_changing, args=(id, conn,addr))
                     thread.start()
@@ -161,6 +177,7 @@ def handle_client(conn, addr):
             if not data:
                 break
             msg_decoded = data.decode("utf-8")
+            editlogfile(msg_decoded,log_file_name)
             if msg_decoded.startswith("!"):
                 thread = threading.Thread(target=handle_command, args=(msg_decoded, conn, addr))
                 thread.start()
@@ -173,12 +190,16 @@ def handle_client(conn, addr):
             socks.remove(conn)
             conn.close()
     print('> Disconnected by ->', addr)
-    connected = False        
-    conn.close()
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))
+    log_file_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    f = open(f"logs/{log_file_name}.txt", "a")
+    teraz = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    f.write(f"{teraz} Started server!")
+    f.close()
     print(f"[INFO] Started server at -> {HOST}:{PORT}")
+    print(f"[INFO] Created log file -> {log_file_name}")
     print(f"[INFO] Created admin password -> {admin_pass}")
     s.listen()
     while True:
