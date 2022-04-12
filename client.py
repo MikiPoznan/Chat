@@ -2,12 +2,20 @@ import socket
 import threading
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
+from tkinter import filedialog
+from turtle import st
+from PIL import ImageTk, Image
+import requests
+import io 
+import re
 
 
 HOST = '127.0.0.1'
 PORT = 2137      
 
 connected = False
+
+imgs = []
 
 def create_room():
     password = " "
@@ -24,6 +32,10 @@ def join_room():
     command = f"!join {id} {password}"
     sock.sendall(bytes(command, 'utf-8'))
     new_window.destroy()
+
+def join_def_room():
+    command = f"!join default".strip()
+    sock.sendall(bytes(command, 'utf-8'))
 
 
 def drawjoingui():
@@ -79,6 +91,35 @@ def insert_text(txt):
     textw.insert(tk.INSERT, txt)
     textw.configure(state='disabled')
 
+def insert_image(url):
+    global img
+    global imgs
+    width = 100
+    height = 100
+    try:
+        for i in range(len(url)):
+            response = requests.get(url[i])
+            img_bytes = io.BytesIO(response.content)
+            img = Image.open(img_bytes)
+            img = img.resize((width,height),Image.ANTIALIAS)
+            image = ImageTk.PhotoImage(img)
+            imgs.append(image)
+            position = textw.index(tk.END)
+            textw.image_create(position, image=image)
+            insert_text(f" "*3)
+    except Exception as e:
+        print(e)
+        insert_text(f"\n")
+
+def manage_text(txt):
+    regex = r'(?:http\:|https\:)?\/\/.*?\.(?:png|jpg|gif|jpeg)'
+    url = re.findall(regex,txt)
+    for i in range(0,len(url)):
+        txt = txt.replace(str(url[i]),f'[Img{i}]')
+    return txt, url
+    url.clear()
+
+
 def gui():
     global textbox
     global textw    
@@ -95,11 +136,14 @@ def gui():
     textbox=tk.Text(root, height=2)
     menu = tk.Menu(root) 
     cascade = tk.Menu(menu) 
-    menu.add_cascade(label="Rooms", menu = cascade)      
-    cascade.add_command(label = "Join", command=drawjoingui)  
-    cascade.add_command(label = "Create",command=drawcreatgui) 
+    menu.add_cascade(label="Room", menu = cascade)      
+    cascade.add_command(label = "Join room", command=drawjoingui)
+    cascade.add_command(label = "Join default room", command=join_def_room)  
+    cascade.add_command(label = "Create room",command=drawcreatgui) 
     root.config( menu = menu)
     textbox.pack(fill=tk.X,side=tk.BOTTOM,ipadx=5, ipady=5)  
+    if imgs == imgs:
+        pass
     root.mainloop()
 
 
@@ -114,8 +158,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         while running:
             try:
                 msg = s.recv(1024)
-                msg = msg.decode('utf-8')
-                insert_text(msg)
+                msg = msg.decode('utf-8') 
+                a,b= manage_text(msg)
+                insert_text(a+f"\n")
+                insert_image(b)
+                insert_text(f"\n")
             except Exception as e:
                 global connected
                 txt =f"[ERROR] Disconnected with error: {e} \n"
